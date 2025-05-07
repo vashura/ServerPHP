@@ -81,37 +81,16 @@ COPY ./.ssl/* /etc/apache2/ssl/
 RUN a2enmod ssl rewrite headers && \
     a2ensite 000-default
 
-# Instalación de Composer
-# Instalación de Composer (versión corregida)
-# Instalación robusta de Composer
 # Instalación simple y confiable
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
     php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
     php -r "unlink('composer-setup.php');" && \
     chmod +x /usr/local/bin/composer
     
-# Configuración de Composer para Magento
-COPY ./.docker/auth.json /home/${APACHE_USER}/.composer/auth.json
-RUN chown ${APACHE_USER}:${APACHE_RUN_GROUP} /home/${APACHE_USER}/.composer/auth.json
 
 # Configuración de MailHog
 RUN curl -Lo /usr/local/bin/mhsendmail https://github.com/mailhog/mhsendmail/releases/download/v0.2.0/mhsendmail_linux_amd64 && \
     chmod +x /usr/local/bin/mhsendmail
-
-# Configuración de Cron para Magento
-COPY ./.apache/crontab /etc/cron.d/magento
-RUN touch /var/log/cron.log && \
-    chmod 0644 /etc/cron.d/magento && \
-    chown ${APACHE_USER}:${APACHE_RUN_GROUP} /etc/cron.d/magento && \
-    crontab -u ${APACHE_USER} /etc/cron.d/magento
-
-# Script de inicio personalizado
-COPY ./.docker/docker-php-entrypoint /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-php-entrypoint && \
-    sed -i 's/^exec /service cron start\n\nexec /' /usr/local/bin/apache2-foreground
-
-ENTRYPOINT ["docker-php-entrypoint"]
-CMD ["apache2-foreground"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s \
